@@ -2,13 +2,14 @@ import fs from 'fs';
 
 import plugin from '../../../lib/plugins/plugin.js';
 import { PATH } from '../model/PATH.js';
-import { num2Ch } from '../model/misc.js';
+import { getStrLen, num2Ch } from '../model/misc.js';
 
 export class table extends plugin {
   constructor() {
     super({
       name: 'table',
       dsc: '表命令',
+      priority: 50,
       rule: [
         {
           reg: '^#排表规则$',
@@ -75,9 +76,11 @@ export class table extends plugin {
         地点: '未知',
         规则: '未知',
         战队: ['佚名', '群星'],
-        记录: [],
+        轮次: 1,
+        记录: [[]],
       })
     );
+    await redis.set('tabulate.round', 0);
     await e.reply('请输入地点（回复空格/0跳过）');
     return this.setContext('setPlace', true, 30);
   }
@@ -96,10 +99,11 @@ export class table extends plugin {
 
   /** 设置表 */
   async setPlace() {
-    const placeName = this.e.msg.trim();
     const curTab = await redis.get('tabulate.table');
-    if (!curTab) return await e.reply('当前没有表，请先 #新建表');
+    if (!curTab) return await this.e.reply('当前没有表，请先 #新建表');
     const curTable = JSON.parse(curTab);
+
+    const placeName = this.e.msg.trim();
 
     if (placeName && placeName !== '0') {
       if (placeName === '#设置地点') {
@@ -118,10 +122,11 @@ export class table extends plugin {
   }
 
   async setRule() {
-    const ruleName = this.e.msg.trim();
     const curTab = await redis.get('tabulate.table');
-    if (!curTab) return await e.reply('当前没有表，请先 #新建表');
+    if (!curTab) return await this.e.reply('当前没有表，请先 #新建表');
     const curTable = JSON.parse(curTab);
+
+    const ruleName = this.e.msg.trim();
 
     if (ruleName && ruleName !== '0') {
       if (ruleName === '#设置规则') {
@@ -140,19 +145,20 @@ export class table extends plugin {
   }
 
   async setTeam() {
-    const teamName = this.e.msg.trim();
     const curTab = await redis.get('tabulate.table');
-    if (!curTab) return await e.reply('当前没有表，请先 #新建表');
+    if (!curTab) return await this.e.reply('当前没有表，请先 #新建表');
     const curTable = JSON.parse(curTab);
+
+    const teamName = this.e.msg.trim();
 
     if (teamName && teamName !== '0') {
       if (teamName === '#设置战队') {
         await this.e.reply('请输入战队（格式 AA vs BB，回复空格/0取消）');
         return this.setContext('setTeam', true, 30);
       }
-      if (/.*?vs.*/.test(teamName)) {
-        const [team1, team2] = teamName.split('vs');
-        curTable.战队 = [team1, team2];
+      if (/.*? vs .*/.test(teamName)) {
+        const [team0, team1] = teamName.split(' vs ').map(tn => tn.trim());
+        curTable.战队 = [team0, team1];
         await redis.set('tabulate.table', JSON.stringify(curTable));
       } else {
         this.finish('setTeam', true);
@@ -176,16 +182,17 @@ export class table extends plugin {
       `时间：${ct.时间}`,
       `地点：${ct.地点}`,
       `规则：${ct.规则}`,
-      `${ct.战队[0].padEnd(6, '-')}=VS=${ct.战队[1].padStart(6, '-')}`,
+      `轮次：${ct.轮次}`,
+      `${ct.战队[0]}-----=-VS-=-----${ct.战队[1]}`,
     ];
 
     for (const [i, round] of ct.记录.entries()) {
       table.push(`------------第${num2Ch(i + 1)}轮------------`);
       for (const battle of round) {
         table.push(
-          `=${ct.战队[0]}=${battle.leftName.padEnd(9 - battle.leftName.length, ' ')} ${battle.leftPoint}:${
-            battle.rightPoint
-          }     =${ct.战队[1]}=${battle.rightName}`
+          `=${ct.战队[0]}=${battle.leftName.padEnd(9 - getStrLen(battle.leftName) + battle.leftName.length, ' ')} ${
+            battle.leftPoint
+          }:${battle.rightPoint}     =${ct.战队[1]}=${battle.rightName}`
         );
       }
     }
@@ -200,9 +207,10 @@ export class table extends plugin {
     if (typeof tableStr !== 'string') return;
 
     await redis.del('tabulate.table');
+    await redis.set('tabulate.round', 0);
 
     const now = Date.now().toString(36);
-    const savePath = `${PATH.data}/table-${now}.json`;
+    const savePath = `${PATH.data}/table-${now}.txt`;
     fs.writeFileSync(savePath, tableStr);
     return await e.reply(`结束了当前表`);
   }
