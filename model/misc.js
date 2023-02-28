@@ -6,7 +6,7 @@ export const sleep = async function (ms) {
 
 /** 中文全角算三个 */
 export const getStrLen = function (str) {
-  return Array.from(str).reduce((len, c) => (c.match(/[^\x00-\xff]/gi) != null ? (len += 3) : (len += 1)), 0);
+  return Array.from(str).reduce((len, c) => (c.match(/[^\x00-\xff]/gi) != null ? (len += 2) : (len += 1)), 0);
 };
 
 /** 阿拉伯数字变中文数字 */
