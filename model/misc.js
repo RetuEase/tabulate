@@ -4,7 +4,7 @@ export const sleep = async function (ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 };
 
-/** 中文全角算三个 */
+/** 中文全角算两个 */
 export const getStrLen = function (str) {
   return Array.from(str).reduce((len, c) => (c.match(/[^\x00-\xff]/gi) != null ? (len += 2) : (len += 1)), 0);
 };

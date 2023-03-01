@@ -64,7 +64,7 @@ export class table extends plugin {
     const curTab = await redis.get('tabulate.table');
     if (curTab) {
       e.reply('存在未结束表，确认结束吗？（确认/取消）');
-      return this.setContext('tabBuildCover', true, 30);
+      return this.setContext('tabBuildCover', false, 30);
     }
 
     await e.reply('正在新建表...');
@@ -82,7 +82,7 @@ export class table extends plugin {
     );
     await redis.set('tabulate.round', 0);
     await e.reply('请输入地点（回复空格/0跳过）');
-    return this.setContext('setPlace', true, 30);
+    return this.setContext('setPlace', false, 30);
   }
 
   async tabBuildCover() {
@@ -108,7 +108,7 @@ export class table extends plugin {
     if (placeName && placeName !== '0') {
       if (placeName === '#设置地点') {
         await this.e.reply('请输入地点（回复空格/0取消）');
-        return this.setContext('setPlace', true, 30);
+        return this.setContext('setPlace', false, 30);
       }
       curTable.地点 = placeName;
       await redis.set('tabulate.table', JSON.stringify(curTable));
@@ -118,7 +118,7 @@ export class table extends plugin {
     if (curTable.规则 !== '未知') return await this.e.reply('地点设置成功');
 
     await this.e.reply('请输入规则（回复空格/0跳过）');
-    return this.setContext('setRule', true, 30);
+    return this.setContext('setRule', false, 30);
   }
 
   async setRule() {
@@ -131,7 +131,7 @@ export class table extends plugin {
     if (ruleName && ruleName !== '0') {
       if (ruleName === '#设置规则') {
         await this.e.reply('请输入规则（回复空格/0取消）');
-        return this.setContext('setRule', true, 30);
+        return this.setContext('setRule', false, 30);
       }
       curTable.规则 = ruleName;
       await redis.set('tabulate.table', JSON.stringify(curTable));
@@ -141,7 +141,7 @@ export class table extends plugin {
     if (curTable.战队[0] !== '佚名' || curTable.战队[1] !== '群星') return await this.e.reply('规则设置成功');
 
     await this.e.reply('请输入战队（格式 AA vs BB， 回复空格/0跳过）');
-    return this.setContext('setTeam', true, 30);
+    return this.setContext('setTeam', false, 30);
   }
 
   async setTeam() {
@@ -154,7 +154,7 @@ export class table extends plugin {
     if (teamName && teamName !== '0') {
       if (teamName === '#设置战队') {
         await this.e.reply('请输入战队（格式 AA vs BB，回复空格/0取消）');
-        return this.setContext('setTeam', true, 30);
+        return this.setContext('setTeam', false, 30);
       }
       if (/.*? vs .*/.test(teamName)) {
         const [team0, team1] = teamName.split(' vs ').map(tn => tn.trim());
@@ -164,7 +164,7 @@ export class table extends plugin {
         this.finish('setTeam', true);
 
         this.e.reply('格式错误，应为 AA vs BB，请重新输入');
-        return this.setContext('setTeam', true, 30);
+        return this.setContext('setTeam', false, 30);
       }
     }
 
